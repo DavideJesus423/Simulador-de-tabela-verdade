@@ -1,0 +1,91 @@
+import itertools
+from tkinter import *
+
+
+class TabelaVerdade:
+    def __init__(self):
+        # Configuração básica da janela
+        self.janela = Tk()
+        self.janela.title("Tabela-Verdade ")
+
+        # Parte 1: Onde o usuário digita a proposição
+        Label(self.janela, text="Digite a proposição (ex: P ∧ Q → R):").pack()
+        self.entrada = Entry(self.janela, width=30)
+        self.entrada.pack()
+
+        # Parte 2: Botão que gera a tabela
+        Button(self.janela, text="Gerar Tabela", command=self.gerar).pack()
+
+        # Parte 3: Onde a tabela aparece
+        self.tabela = Text(self.janela, height=10, width=40)
+        self.tabela.pack()
+
+        # Parte 4: Classificação
+        self.classificacao = Label(
+            self.janela, text="", fg="blue", font=('Arial', 10, 'bold'))
+        self.classificacao.pack()
+
+        self.janela.mainloop()
+
+    def gerar(self):
+        """Função principal que faz todo o trabalho"""
+        expr = self.entrada.get()
+        self.tabela.delete(1.0, END)
+        self.classificacao.config(text="")
+
+        # Passo 1: Encontrar as variáveis (P, Q, R)
+        variaveis = sorted(set([c for c in expr if c in ['P', 'Q', 'R']]))
+        if not variaveis:
+            self.tabela.insert(END, "Erro: Use apenas P, Q e R como variáveis")
+            return
+
+        # Passo 2: Gerar todas combinações V/F (8 combinações para 3 variáveis)
+        linhas = list(itertools.product([True, FALSE], repeat=3))
+
+        # Passo 3: Montar o cabeçalho
+        cabecalho = " P | Q | R | Resultado\n" + "-"*25 + "\n"
+        self.tabela.insert(END, cabecalho)
+
+        # Passo 4: Processar cada linha
+        todos_true = True
+        todos_false = True
+
+        for P, Q, R in linhas:
+            contexto = {'P': P, 'Q': Q, 'R': R}
+
+            # Converter símbolos para Python
+            expr_py = (expr.replace('∧', 'and').replace('∨', 'or')
+                       .replace('¬', 'not').replace('→', '<=')
+                       .replace('↔', '=='))
+
+            try:
+                resultado = eval(expr_py, {}, contexto)
+            except:
+                self.tabela.insert(END, "Erro: Expressão inválida!")
+                return
+
+            # Atualizar classificação
+            if resultado:
+                todos_false = False
+            else:
+                todos_true = False
+
+            # Adicionar linha
+            linha = f"{'V' if P else 'F'} | {'V' if Q else 'F'} | {'V' if R else 'F'} | {'V' if resultado else 'F'}\n"
+            self.tabela.insert(END, linha)
+
+        # Mostrar classificação
+        if todos_true:
+            self.classificacao.config(
+                text="Classificação: TAUTOLOGIA", fg="green")
+        elif todos_false:
+            self.classificacao.config(
+                text="Classificação: CONTRADIÇÃO", fg="red")
+        else:
+            self.classificacao.config(
+                text="Classificação: CONTINGÊNCIA", fg="blue")
+
+
+# Rodar o programa
+if __name__ == "__main__":
+    TabelaVerdade()
